@@ -12,6 +12,7 @@
     "hide-websocket-settings": "Y",
     "hide-help-cards": "Y",
     "allow-deep-link-server-settings": "N",
-    "allow-deep-link-password": "Y"
+    "allow-deep-link-password": "Y",
+    "allow-websocket": "Y"
   }
 }
