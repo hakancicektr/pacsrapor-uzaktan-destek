@@ -31,8 +31,8 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - { id: host, name: "PacsRapor Uzaktan Destek", file: "PacsRaporUzaktanDestek", conn: "incoming" }
-          - { id: support, name: "PacsRapor Destek Merkezi", file: "PacsRaporDestekMerkezi", conn: "outgoing" }
+          - { id: host, name: "PacsRapor Uzaktan Destek", file: "server", conn: "incoming" }
+          - { id: support, name: "PacsRapor Destek Merkezi", file: "destek", conn: "outgoing" }
     env:
       PR_VARIANT: ${{ matrix.variant.id }}
     steps:
