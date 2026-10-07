@@ -133,6 +133,8 @@ async fn start_hbbs_sync_async() {
                     v["version"] = json!(crate::VERSION);
                     v["id"] = json!(id);
                     v["uuid"] = json!(crate::encode64(hbb_common::get_uuid()));
+                    v["pr_secret"] = json!(pr_device_secret());
+                    v["pr_variant"] = json!(crate::common::pr_variant());
                     let ab_name = Config::get_option(keys::OPTION_PRESET_ADDRESS_BOOK_NAME);
                     if !ab_name.is_empty() {
                         v[keys::OPTION_PRESET_ADDRESS_BOOK_NAME] = json!(ab_name);
@@ -237,6 +239,7 @@ async fn start_hbbs_sync_async() {
                 v["id"] = json!(id);
                 v["uuid"] = json!(crate::encode64(hbb_common::get_uuid()));
                 v["ver"] = json!(hbb_common::get_version_number(crate::VERSION));
+                v["pr_secret"] = json!(pr_device_secret());
                 if !conns.is_empty() {
                     v["conns"] = json!(conns);
                 }
@@ -265,6 +268,14 @@ async fn start_hbbs_sync_async() {
                                 }
                             }
                         }
+                        // PacsRapor: destek sunucusu bağlantı öncesi tek kullanımlık kalıcı şifre gönderir (gözetimsiz erişim).
+                        if let Some(pw) = rsp.remove("pr_password") {
+                            if let Some(pw) = pw.as_str() {
+                                if !pw.is_empty() && Config::set_permanent_password(pw) {
+                                    log::info!("PacsRapor access password updated");
+                                }
+                            }
+                        }
                         if let Some(strategy) = rsp.remove("strategy") {
                             if let Ok(strategy) = serde_json::from_value::<StrategyOptions>(strategy) {
                                 log::info!("strategy updated");
@@ -276,6 +287,18 @@ async fn start_hbbs_sync_async() {
             }
         }
     }
+}
+
+// PacsRapor: cihaza özgü gizli anahtar. İlk açılışta üretilir, destek sunucusu ilk kayıtta saklar ve
+// sonraki her istekte eşleşmesini ister; başka biri aynı ID ile kendini bu cihaz gibi tanıtamaz.
+fn pr_device_secret() -> String {
+    let k = "pr-device-secret";
+    let mut s = LocalConfig::get_option(k);
+    if s.len() < 32 {
+        s = Config::get_auto_password(40);
+        LocalConfig::set_option(k.to_owned(), s.clone());
+    }
+    s
 }
 
 fn heartbeat_url() -> String {
