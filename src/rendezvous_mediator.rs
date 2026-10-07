@@ -256,6 +256,18 @@ pub(crate) fn reset_needs_deploy_notification() {
     NOTIFIED_NEEDS_DEPLOY.store(false, Ordering::SeqCst);
 }
 
+
+// PacsRapor: kısıtlı ağdaki kullanıcı bilgisayarı kaydı UDP 443 ile yapar (start_udp); ID sunucusuna açılan TCP bağlantıları
+// (aktarma yanıtı vb.) aynı adrese giderse 443'teki web sunucusuna düşüp kayboluyordu. Kullanıcı sürümünde bu bağlantılar
+// 443 üzerinden WebSocket (wss://<sunucu>/ws/id) ile kurulur; açık kaynak sunucu bu iletileri WebSocket'te işler.
+fn pr_tcp_target(host: &str) -> String {
+    if crate::common::pr_variant() == "host" && !host.starts_with("ws") {
+        let h = host.rsplit_once(':').map(|(a, _)| a).unwrap_or(host);
+        return format!("wss://{}/ws/id", h);
+    }
+    host.to_owned()
+}
+
 #[derive(Clone)]
 pub struct RendezvousMediator {
     addr: TargetAddr<'static>,
@@ -717,7 +729,7 @@ impl RendezvousMediator {
             secure,
         );
 
-        let mut socket = connect_tcp(&*self.host, CONNECT_TIMEOUT).await?;
+        let mut socket = connect_tcp(pr_tcp_target(&self.host), CONNECT_TIMEOUT).await?;
         // A relay response carrying an answer carries this machine's ICE candidates with it, so
         // that half goes out only on an encrypted channel. A server that does not complete the
         // exchange loses the answer, not the relay: the response goes without it, on a fresh
@@ -729,7 +741,7 @@ impl RendezvousMediator {
             if let Err(err) = crate::secure_tcp_required(&mut socket, &key).await {
                 log::warn!("relaying without the WebRTC answer, it cannot be encrypted: {err}");
                 webrtc_sdp_answer = String::new();
-                socket = connect_tcp(&*self.host, CONNECT_TIMEOUT).await?;
+                socket = connect_tcp(pr_tcp_target(&self.host), CONNECT_TIMEOUT).await?;
             }
         }
 
@@ -839,7 +851,7 @@ impl RendezvousMediator {
             );
             bail!("no place among the punches in flight");
         };
-        let mut socket = connect_tcp(&*self.host, CONNECT_TIMEOUT).await?;
+        let mut socket = connect_tcp(pr_tcp_target(&self.host), CONNECT_TIMEOUT).await?;
         let local_addr = socket.local_addr();
         // we saw invalid local_addr while using proxy, local_addr.ip() == "::1"
         let local_addr: SocketAddr =
@@ -1166,7 +1178,7 @@ impl RendezvousMediator {
             // is made — the controller keeps its request socket for trickled ICE.
             let mut msg_out = Message::new();
             msg_out.set_punch_hole_sent(msg_punch);
-            let mut socket = connect_tcp(&*self.host, CONNECT_TIMEOUT).await?;
+            let mut socket = connect_tcp(pr_tcp_target(&self.host), CONNECT_TIMEOUT).await?;
             // The answer goes out only on a channel that is actually encrypted; otherwise this
             // WebRTC attempt is abandoned and the controller falls back to its other transports.
             crate::secure_tcp_required(&mut socket, &crate::get_key(true).await).await?;
@@ -1175,7 +1187,7 @@ impl RendezvousMediator {
         }
         log::debug!("Punch tcp hole to {:?}", peer_addr);
         let mut socket = {
-            let socket = connect_tcp(&*self.host, CONNECT_TIMEOUT).await?;
+            let socket = connect_tcp(pr_tcp_target(&self.host), CONNECT_TIMEOUT).await?;
             let local_addr = socket.local_addr();
             // key important here for punch hole to tell my gateway incoming peer is safe.
             // Awaited rather than spawned so the mapping exists before `PunchHoleSent` goes out;
