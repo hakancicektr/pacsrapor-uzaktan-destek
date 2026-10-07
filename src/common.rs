@@ -1089,8 +1089,17 @@ pub fn is_rustdesk() -> bool {
 }
 
 #[inline]
+// PacsRapor: uygulama adında boşluk var ("PacsRapor Uzaktan Destek"); URL şeması yalnız harf/rakam olabilir.
+pub fn get_uri_scheme() -> String {
+    get_app_name()
+        .to_lowercase()
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect()
+}
+
 pub fn get_uri_prefix() -> String {
-    format!("{}://", get_app_name().to_lowercase())
+    format!("{}://", get_uri_scheme())
 }
 
 #[cfg(target_os = "macos")]

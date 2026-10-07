@@ -1335,7 +1335,7 @@ fn get_valid_subkey() -> String {
 // Return install options other than InstallLocation.
 pub fn get_install_options() -> String {
     let app_name = crate::get_app_name();
-    let subkey = format!(".{}", app_name.to_lowercase());
+    let subkey = format!(".{}", crate::common::get_uri_scheme());
     let mut opts = HashMap::new();
 
     let desktop_shortcuts = get_reg_of_hkcr(&subkey, REG_NAME_INSTALL_DESKTOPSHORTCUTS);
@@ -1358,7 +1358,7 @@ pub fn get_silent_install_options(printer_override: Option<bool>) -> &'static st
         Some(override_value) => override_value,
         None => {
             let app_name = crate::get_app_name();
-            let subkey = format!(".{}", app_name.to_lowercase());
+            let subkey = format!(".{}", crate::common::get_uri_scheme());
             let printer = get_reg_of_hkcr(&subkey, REG_NAME_INSTALL_PRINTER);
             printer.as_deref() == Some("1")
         }
@@ -1527,7 +1527,7 @@ fn get_after_install(
     reg_value_printer: Option<String>,
 ) -> String {
     let app_name = crate::get_app_name();
-    let ext = app_name.to_lowercase();
+    let ext = crate::common::get_uri_scheme();
     let nested_exe = escape_nested_cmd_ampersands(exe);
 
     // reg delete HKEY_CURRENT_USER\Software\Classes for
@@ -1787,7 +1787,7 @@ pub fn run_before_uninstall() -> ResultType<()> {
 
 fn get_before_uninstall(kill_self: bool) -> String {
     let app_name = crate::get_app_name();
-    let ext = app_name.to_lowercase();
+    let ext = crate::common::get_uri_scheme();
     let filter = if kill_self {
         "".to_string()
     } else {
@@ -2120,7 +2120,7 @@ pub fn update_install_option(k: &str, v: &str) -> ResultType<()> {
         return Ok(());
     }
     let app_name = crate::get_app_name();
-    let ext = app_name.to_lowercase();
+    let ext = crate::common::get_uri_scheme();
     let cmds =
         format!("chcp 65001 && reg add HKEY_CLASSES_ROOT\\.{ext} /f /v {k} /t REG_SZ /d \"{v}\"");
     run_cmds(cmds, false, "update_install_option")?;
