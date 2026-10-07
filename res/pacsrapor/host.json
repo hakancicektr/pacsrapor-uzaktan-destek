@@ -1,0 +1,18 @@
+{
+  "app-name": "PacsRapor Uzaktan Destek",
+  "conn-type": "incoming",
+  "override-settings": {
+    "custom-rendezvous-server": "destek.pacsrapor.com",
+    "relay-server": "destek.pacsrapor.com",
+    "key": "pa5jzjlbdWBX8TGLKJPFk+1oaueucae95+Oo1UcUfUw=",
+    "api-server": "https://destek.pacsrapor.com",
+    "allow-websocket": "Y",
+    "enable-check-update": "N",
+    "hide-server-settings": "Y",
+    "hide-proxy-settings": "Y",
+    "hide-websocket-settings": "Y",
+    "hide-help-cards": "Y",
+    "allow-deep-link-server-settings": "N",
+    "disable-change-id": "Y"
+  }
+}

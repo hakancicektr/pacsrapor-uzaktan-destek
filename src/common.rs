@@ -2357,25 +2357,28 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
-pub fn load_custom_client() {
-    #[cfg(debug_assertions)]
-    if let Ok(data) = std::fs::read_to_string("./custom.txt") {
-        read_custom_client(data.trim());
-        return;
+// PacsRapor: markalı yapılandırma derlemeye gömülüdür (sunucu, anahtar, uygulama adı, bağlantı yönü).
+// Dışarıdan konan custom.txt yok sayılır; böylece kurulu istemci başka sunucuya yönlendirilemez.
+// Derleme türü PR_VARIANT ile seçilir: "host" (yalnız gelen bağlantı, kullanıcı bilgisayarı) / "support" (destek ekibi).
+const PR_CONFIG_HOST: &str = include_str!("../res/pacsrapor/host.json");
+const PR_CONFIG_SUPPORT: &str = include_str!("../res/pacsrapor/support.json");
+
+pub fn pr_variant() -> &'static str {
+    match option_env!("PR_VARIANT") {
+        Some("support") => "support",
+        _ => "host",
     }
-    let Some(path) = std::env::current_exe().map_or(None, |x| x.parent().map(|x| x.to_path_buf()))
-    else {
-        return;
+}
+
+pub fn load_custom_client() {
+    let config = if pr_variant() == "support" {
+        PR_CONFIG_SUPPORT
+    } else {
+        PR_CONFIG_HOST
     };
-    #[cfg(target_os = "macos")]
-    let path = path.join("../Resources");
-    let path = path.join("custom.txt");
-    if path.is_file() {
-        let Ok(data) = std::fs::read_to_string(&path) else {
-            log::error!("Failed to read custom client config");
-            return;
-        };
-        read_custom_client(&data.trim());
+    match serde_json::from_str::<std::collections::HashMap<String, serde_json::Value>>(config) {
+        Ok(data) => apply_custom_client(data),
+        Err(e) => log::error!("Failed to parse embedded PacsRapor config: {}", e),
     }
 }
 
@@ -2469,12 +2472,16 @@ pub fn read_custom_client(config: &str) {
         log::error!("Failed to dec custom client config");
         return;
     };
-    let Ok(mut data) =
+    let Ok(data) =
         serde_json::from_slice::<std::collections::HashMap<String, serde_json::Value>>(&data)
     else {
         log::error!("Failed to parse custom client config");
         return;
     };
+    apply_custom_client(data);
+}
+
+fn apply_custom_client(mut data: std::collections::HashMap<String, serde_json::Value>) {
 
     if let Some(app_name) = data.remove("app-name") {
         if let Some(app_name) = app_name.as_str() {
