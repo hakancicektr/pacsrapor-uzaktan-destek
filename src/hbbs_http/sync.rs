@@ -291,6 +291,36 @@ async fn start_hbbs_sync_async() {
 
 // PacsRapor: cihaza özgü gizli anahtar. İlk açılışta üretilir, destek sunucusu ilk kayıtta saklar ve
 // sonraki her istekte eşleşmesini ister; başka biri aynı ID ile kendini bu cihaz gibi tanıtamaz.
+/// PacsRapor: destek programının (server.exe) ID sunucusuna gönderdiği bağlantı isteklerine eklenen imzalı kimlik.
+/// Biçim: "pr1|<kendi ID>|<unix sn>|<hex HMAC-SHA256(anahtar = sha256_hex(cihaz gizli anahtarı), "<kendi ID>|<hedef>|<sn>")>".
+/// Sunucu, onaylı destek cihazlarının anahtar özetiyle doğrular. Kullanıcı sürümünde ve diğer sürümlerde eski değer kalır.
+pub fn pr_request_token(target: &str, fallback: &str) -> String {
+    if crate::common::pr_variant() != "support" {
+        return fallback.to_owned();
+    }
+    use sha2::{Digest, Sha256};
+    let id = Config::get_id();
+    let ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let key = hex::encode(Sha256::digest(pr_device_secret().as_bytes()));
+    let msg = format!("{}|{}|{}", id, target, ts);
+    // HMAC-SHA256 (RFC 2104)
+    let mut k = [0u8; 64];
+    let kb = key.as_bytes();
+    if kb.len() > 64 {
+        k[..32].copy_from_slice(&Sha256::digest(kb));
+    } else {
+        k[..kb.len()].copy_from_slice(kb);
+    }
+    let mut ipad = Sha256::new();
+    ipad.update(k.iter().map(|b| b ^ 0x36).collect::<Vec<u8>>());
+    ipad.update(msg.as_bytes());
+    let inner = ipad.finalize();
+    let mut opad = Sha256::new();
+    opad.update(k.iter().map(|b| b ^ 0x5c).collect::<Vec<u8>>());
+    opad.update(inner);
+    format!("pr1|{}|{}|{}", id, ts, hex::encode(opad.finalize()))
+}
+
 fn pr_device_secret() -> String {
     let k = "pr-device-secret";
     let mut s = LocalConfig::get_option(k);

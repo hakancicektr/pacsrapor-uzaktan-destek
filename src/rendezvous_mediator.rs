@@ -285,12 +285,13 @@ impl RendezvousMediator {
 
     pub async fn start_all() {
         crate::test_nat_type();
+        // PacsRapor: destek programı (yalnız giden) da cihaz servisine kendini bildirir (kayıt talebi, onay, imza anahtarı)
+        crate::hbbs_http::sync::start();
         if config::is_outgoing_only() {
             loop {
                 sleep(1.).await;
             }
         }
-        crate::hbbs_http::sync::start();
         #[cfg(target_os = "windows")]
         if crate::platform::is_installed() && crate::is_server() {
             crate::updater::start_auto_update();

@@ -942,7 +942,7 @@ impl Client {
         };
         msg_out.set_punch_hole_request(PunchHoleRequest {
             id: peer.to_owned(),
-            token: token.to_owned(),
+            token: crate::hbbs_http::sync::pr_request_token(peer, token),
             nat_type: nat_type.into(),
             licence_key: key.to_owned(),
             conn_type: conn_type.into(),
@@ -1812,7 +1812,7 @@ impl Client {
             );
             msg_out.set_request_relay(RequestRelay {
                 id: peer.to_owned(),
-                token: token.to_owned(),
+                token: crate::hbbs_http::sync::pr_request_token(peer, token),
                 uuid: uuid.clone(),
                 relay_server: relay_server.clone(),
                 secure,
