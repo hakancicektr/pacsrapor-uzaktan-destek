@@ -167,6 +167,10 @@ pub fn core_main() -> Option<Vec<String>> {
         }
     }
     hbb_common::init_log(false, &log_name);
+    #[cfg(windows)]
+    if args.is_empty() || args[0].starts_with(&crate::get_uri_prefix()) {
+        crate::platform::windows::pr_register_url_scheme_user();
+    }
 
     // linux uni (url) go here.
     #[cfg(all(target_os = "linux", feature = "flutter"))]

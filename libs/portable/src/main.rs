@@ -245,6 +245,8 @@ fn execute(path: PathBuf, args: Vec<String>, _ui: bool) {
     }
 
     cmd.env(APPNAME_RUNTIME_ENV_KEY, exe_name);
+    // PacsRapor: URL şeması kaydı dış (taşınabilir) exe'ye işaret etsin — iç exe geçici klasörde
+    cmd.env("PR_PORTABLE_EXE", &exe);
     if use_null_stdio() {
         cmd.stdin(Stdio::null())
             .stdout(Stdio::null())

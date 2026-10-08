@@ -2100,6 +2100,50 @@ pub fn prepare_custom_client_update() -> ResultType<bool> {
     Ok(true)
 }
 
+/// PacsRapor (08.10.2026): kurulu değilken URL şemasını (ör. pacsrapordestekmerkezi://) geçerli kullanıcıya kaydeder.
+/// Kurulumda HKCR'ye yazılıyor; taşınabilir exe hiç kaydetmediği için tarayıcıdaki bağlantılar programa ulaşmıyordu.
+/// Komut dış taşınabilir exe'ye (PR_PORTABLE_EXE) işaret eder; yoksa çalışan exe. Değer aynıysa yazmaz.
+pub fn pr_register_url_scheme_user() {
+    if is_installed() {
+        return;
+    }
+    let exe = std::env::var("PR_PORTABLE_EXE")
+        .ok()
+        .filter(|p| !p.is_empty() && std::path::Path::new(p).exists())
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .map(|p| p.to_string_lossy().to_string())
+        });
+    let Some(exe) = exe else { return };
+    let scheme = crate::common::get_uri_scheme();
+    if scheme.is_empty() {
+        return;
+    }
+    let cmd = format!("\"{}\" \"%1\"", exe);
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let base = format!("Software\\Classes\\{}", scheme);
+    if let Ok(k) = hkcu.open_subkey(format!("{}\\shell\\open\\command", base)) {
+        if k.get_value::<String, _>("").ok().as_deref() == Some(cmd.as_str()) {
+            return;
+        }
+    }
+    let res = (|| -> std::io::Result<()> {
+        let (k, _) = hkcu.create_subkey(&base)?;
+        k.set_value("", &format!("URL:{}", crate::get_app_name()))?;
+        k.set_value("URL Protocol", &"")?;
+        let (icon, _) = hkcu.create_subkey(format!("{}\\DefaultIcon", base))?;
+        icon.set_value("", &format!("\"{}\",0", exe))?;
+        let (c, _) = hkcu.create_subkey(format!("{}\\shell\\open\\command", base))?;
+        c.set_value("", &cmd)?;
+        Ok(())
+    })();
+    match res {
+        Ok(()) => log::info!("PacsRapor: URL şeması kaydedildi {} -> {}", scheme, exe),
+        Err(e) => log::error!("PacsRapor: URL şeması kaydedilemedi: {}", e),
+    }
+}
+
 pub fn get_license_from_exe_name() -> ResultType<CustomServer> {
     let mut exe = std::env::current_exe()?.to_str().unwrap_or("").to_owned();
     // if defined portable appname entry, replace original executable name with it.
