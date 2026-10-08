@@ -113,6 +113,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     ];
     if (isIncomingOnly) {
       children.addAll([
+        // PacsRapor: KVKK bilgilendirmesi (aydınlatma metni destek sitesinde)
+        InkWell(
+          onTap: () => launchUrl(Uri.parse('https://destek.pacsrapor.com/kvkk.html')),
+          child: Text(
+            'Uzaktan destek bağlantıları kişisel verilerin korunması kapsamında kayıt altına alınır. KVKK Aydınlatma Metni',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11, color: MyTheme.accent, decoration: TextDecoration.underline),
+          ),
+        ).marginSymmetric(horizontal: 12, vertical: 6),
         Divider(),
         OnlineStatusWidget(
           onSvcStatusChanged: () {

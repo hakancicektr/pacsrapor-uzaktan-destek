@@ -14,6 +14,7 @@ import 'package:get/get.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../common.dart';
@@ -550,7 +551,16 @@ class _CmHeaderState extends State<_CmHeader>
                         ),
                       )
                   ],
-                ))
+                )),
+                // PacsRapor: KVKK bilgilendirmesi
+                SizedBox(height: 6.0),
+                InkWell(
+                  onTap: () => launchUrl(Uri.parse('https://destek.pacsrapor.com/kvkk.html')),
+                  child: Text(
+                    'Bu bağlantı kayıt altına alınır · KVKK Aydınlatma Metni',
+                    style: TextStyle(color: Colors.white70, fontSize: 11, decoration: TextDecoration.underline),
+                  ),
+                ),
               ],
             ),
           ),
