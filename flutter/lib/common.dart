@@ -2592,7 +2592,8 @@ connect(BuildContext context, String id,
       }
     } catch (_) {}
   }
-  id = id.replaceAll(' ', '');
+  // PacsRapor: sekme / satır sonu da (panel tablosundan kopyalanan ID "88150449\t" → ID bulunamadı)
+  id = id.replaceAll(RegExp(r'\s'), '');
   final oldId = id;
   id = await bind.mainHandleRelayId(id: id);
   forceRelay = id != oldId || forceRelay;
