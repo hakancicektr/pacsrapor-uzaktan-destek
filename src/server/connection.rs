@@ -1548,6 +1548,7 @@ impl Connection {
     }
 
     fn post_conn_audit(&self, v: Value) {
+        pr_local_audit(self.inner.id, &v);
         if self.server_audit_conn.is_empty() {
             return;
         }
@@ -7949,5 +7950,15 @@ mod test {
         // is all three fields, and either of those is someone else's screen to lock.
         assert!(!replaced_by(&conn(3, remote, key(8, "peer")), 2, &mine));
         assert!(!replaced_by(&conn(3, remote, key(7, "other")), 2, &mine));
+    }
+}
+
+/// PacsRapor: bağlantı kayıtları bu bilgisayarda da tutulur (KVKK / denetim; sunucuya ulaşılamasa bile kalır).
+/// Dosya: <günlük dizini>/pacsrapor-erisim.log — satır: "<yerel zaman> conn=<no> <kayıt JSON>" (açılış, bağlanan, kapanış).
+fn pr_local_audit(conn_id: i32, v: &Value) {
+    use std::io::Write;
+    let p = Config::log_path().join("pacsrapor-erisim.log");
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&p) {
+        let _ = writeln!(f, "{} conn={} {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), conn_id, v);
     }
 }
