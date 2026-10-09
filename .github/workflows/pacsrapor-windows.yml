@@ -150,7 +150,7 @@ jobs:
           Copy-Item ./rustdesk/rustdesk.exe "./rustdesk/${{ matrix.variant.name }}.exe"
           Remove-Item ./rustdesk/rustdesk.exe
           pushd ./res/msi
-          python preprocess.py -c --conn-type "${{ matrix.variant.conn }}" --app-name "${{ matrix.variant.name }}" -m "PacsRapor" -d ../../rustdesk
+          python preprocess.py -c -v "${{ env.VERSION }}" --conn-type "${{ matrix.variant.conn }}" --app-name "${{ matrix.variant.name }}" -m "PacsRapor" -d ../../rustdesk
           nuget restore msi.sln
           msbuild msi.sln -p:Configuration=Release -p:Platform=x64 /p:TargetVersion=Windows10
           $msi = Get-ChildItem ./Package/bin/*/Release/en-us/Package.msi | Select-Object -First 1
