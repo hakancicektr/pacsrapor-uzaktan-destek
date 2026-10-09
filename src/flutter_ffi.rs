@@ -49,6 +49,12 @@ fn initialize(app_dir: &str, custom_client_config: &str) {
     // PacsRapor: dışarıdan gelen yapılandırma yok sayılır, her zaman gömülü yapılandırma yüklenir.
     let _ = custom_client_config;
     crate::load_custom_client();
+    // PacsRapor: Android destek programı (yalnız giden) ekran paylaşımı servisini hiç başlatmaz; cihaz servisine
+    // kayıt / onay / imza anahtarı bildirimi (hbbs_http::sync) masaüstündeki gibi uygulama açılışında başlar.
+    #[cfg(target_os = "android")]
+    if crate::common::pr_variant() == "support" {
+        crate::hbbs_http::sync::start();
+    }
     #[cfg(target_os = "android")]
     {
         // flexi_logger can't work when android_logger initialized.
