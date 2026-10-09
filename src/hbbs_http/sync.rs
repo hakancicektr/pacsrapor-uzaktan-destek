@@ -321,12 +321,18 @@ pub fn pr_request_token(target: &str, fallback: &str) -> String {
     format!("pr1|{}|{}|{}", id, ts, hex::encode(opad.finalize()))
 }
 
+// Cihaz gizli anahtarı (09.10.2026): Config2 seçeneğinde tutulur, kurulumda (--import-config) Windows hizmetine aktarılır.
+// Önceden LocalConfig içindeydi; o dosya hizmete aktarılmadığından kurulumdan sonra hizmet yeni anahtar üretiyor, sunucu
+// ilk kayıttaki anahtarı beklediği için sinyalleri reddediyor ve cihaz çevrimdışı görünüyordu. Eski anahtar varsa taşınır.
 fn pr_device_secret() -> String {
     let k = "pr-device-secret";
-    let mut s = LocalConfig::get_option(k);
+    let mut s = Config::get_option(k);
     if s.len() < 32 {
-        s = Config::get_auto_password(40);
-        LocalConfig::set_option(k.to_owned(), s.clone());
+        s = LocalConfig::get_option(k);
+        if s.len() < 32 {
+            s = Config::get_auto_password(40);
+        }
+        Config::set_option(k.to_owned(), s.clone());
     }
     s
 }
